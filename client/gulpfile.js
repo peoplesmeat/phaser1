@@ -1,11 +1,12 @@
 var gulp = require('gulp');
+var concat = require('gulp-concat');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream');
 var tsify = require('tsify');
 var sourcemaps = require('gulp-sourcemaps');
 var buffer = require('vinyl-buffer');
 var paths = {
-    pages: ['src/*.html']
+    pages: ['src/html/*.html']
 };
 
 gulp.task('copyHtml', function () {
@@ -13,7 +14,13 @@ gulp.task('copyHtml', function () {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('vendor', function(){
+gulp.task('vendor', function() {
+    return gulp.src('node_modules/phaser/build/phaser.js')
+        .pipe(concat('vendor.js'))
+        .pipe(gulp.dest('./dist/'));
+});
+
+/*gulp.task('vendor', function(){
     return browserify({
 	basedir: '.',
 	entries: [
@@ -24,7 +31,7 @@ gulp.task('vendor', function(){
 	.pipe(source('vendor.js'))
         .pipe(buffer())
 	.pipe(gulp.dest('dist'));
-});
+});*/
 
 gulp.task('ts-compile', function() {
     return browserify({
