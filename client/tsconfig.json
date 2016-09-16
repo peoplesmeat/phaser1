@@ -1,0 +1,10 @@
+{
+    "files": [
+	"node_modules/phaser/typescript/phaser.d.ts"
+    ],
+    "compilerOptions": {
+	"noImplicitAny": true,
+	"noEmitOnError": true,
+	"target": "es5"
+    }
+}
