@@ -1,8 +1,10 @@
 var gulp = require('gulp');
+var gutil = require("gulp-util");
 var concat = require('gulp-concat');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream');
 var tsify = require('tsify');
+var watchify = require("watchify");
 var sourcemaps = require('gulp-sourcemaps');
 var buffer = require('vinyl-buffer');
 var paths = {
@@ -33,22 +35,25 @@ gulp.task('vendor', function() {
 	.pipe(gulp.dest('dist'));
 });*/
 
-gulp.task('ts-compile', function() {
-    return browserify({
-        basedir: '.',
-        debug: true,
-        entries: ['src/typescript/main.ts'],
-        cache: {},
-        packageCache: {}
-    })
-        .plugin(tsify)
-        .transform("babelify")
+var watchedBrowserify = watchify(browserify({
+    basedir: '.',
+    debug: true,
+    entries: ['src/typescript/main.ts'],
+    cache: {},
+    packageCache: {}
+    }).plugin(tsify));
+
+function bundle() {
+    return watchedBrowserify.transform("babelify")
         .bundle()
         .pipe(source('bundle.js'))
         .pipe(buffer())
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest('dist'));
-});
+}
 
-gulp.task('default', ['copyHtml', 'ts-compile']);
+gulp.task('default', ['copyHtml'], bundle);
+
+watchedBrowserify.on('update', bundle);
+watchedBrowserify.on('log', gutil.log);
