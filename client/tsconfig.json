@@ -1,6 +1,7 @@
 {
     "files": [
-	"node_modules/phaser/typescript/phaser.d.ts"
+	"node_modules/phaser/typescript/phaser.d.ts",
+      "./src/typescript/main.ts"
     ],
     "compilerOptions": {
 	"noImplicitAny": true,
