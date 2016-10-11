@@ -1,39 +1,27 @@
 import SpriteBatch = Phaser.SpriteBatch;
 import Sprite = Phaser.Sprite;
 
-class SimpleGame {
+class PathComponent {
+    dx: number;
+    dy: number;
+    dz: number;
+    delx: number;
+    del: number;
 
-    constructor() {
-        this.game = new Phaser.Game(800, 600, Phaser.AUTO, 'content', {
-            preload: () => this.preload(),
-            create: () => this.create()
-        });
+    constructor(dx: number, dy: number, dz: number, delx: number, del: number) {
+        this.dx = dx;
+        this.dy = dy;
+        this.dz = dz;
+        this.delx = delx;
+        this.del = del;
     }
-
-    game: Phaser.Game;
-
-    preload() {
-        this.game.load.image('logo', 'images/phaser2.png');
-    }
-
-    addLogo() {
-        var logo = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'logo');
-
-        logo.anchor.setTo(0.5, 0.5);
-        logo.scale.setTo(0.2, 0.2);
-
-        this.game.add.tween(logo.scale).to({ x: 2, y: 1 }, 500, Phaser.Easing.Bounce.Out, true);
-    }
-
-    create() {
-        this.addLogo();
-    }
-
 }
 
 class Starfield {
     constructor() {
-        this.game = new Phaser.Game(window.innerWidth, 600, Phaser.AUTO, 'content', {
+        this.width = window.innerWidth;
+
+        this.game = new Phaser.Game(this.width, 600, Phaser.AUTO, 'content', {
             preload: () => this.preload(),
             create: () => this.create(),
             update: () => this.update()
@@ -41,7 +29,14 @@ class Starfield {
 
         this.del = this.tab[this.tabb + 4];
         this.delx = this.tab[this.tabb + 3];
+
+        for (var i=0; i<this.tab.length/5; i++) {
+            this.path.push(new PathComponent(this.tab[i*5+0], this.tab[i*5+1], this.tab[i*5+2], this.tab[i*5+3] ,this.tab[i*5+4]));
+        }
+        console.log(this.path);
     }
+
+    width: number;
 
     game: Phaser.Game;
     sprites: SpriteBatch;
@@ -49,7 +44,10 @@ class Starfield {
     max: number = 164;
 
     //  Path data table
-    tab: Array<number> = [ 0, 0, -4, 25, 250, 2, 1, -4, 25, 100, 3, 1, -2, 25, 100, 4, 2, 2, 25, 100, -4, 2, 2, 10, 100, 0, 0, -2, 25, 250, 0, 2, 0, 25, 200, 0, 2, 2, 25, 100, 0, 0, 2, 25, 100, 2, 0, 2, 25, 200, 0, 2, 2, 25, 200, 2, 0, 2, 25, 200, 0, 4, 2, 25, 200 ];
+    // (speedx, speedy, speedz, number of frames to accelerate, number of frames to live in path
+    // (speedx, speedy, speedz, delx, del
+    tab: Array<number> = [0, 0, -4, 25, 100, 2, 1, -4, 25, 100, 3, 1, -2, 25, 100, 4, 2, 2, 25, 100, -4, 2, 2, 10, 100, 0, 0, -2, 25, 250, 0, 2, 0, 25, 200, 0, 2, 2, 25, 100, 0, 0, 2, 25, 100, 2, 0, 2, 25, 200, 0, 2, 2, 25, 200, 2, 0, 2, 25, 200, 0, 4, 2, 25, 200];
+    path: Array<PathComponent> = [];
     tabb: number = 0;
     del: number;
     delx: number;
@@ -70,6 +68,8 @@ class Starfield {
 
     preload() {
         this.game.load.image('star', 'images/star.png');
+        this.game.load.image('star2', 'images/star2.png');
+        this.game.load.image('star3', 'images/star3.png');
     }
 
     create() {
@@ -79,13 +79,19 @@ class Starfield {
             this.max = 2000;
         }
 
-        for (var i = 0; i < this.max; i++)
-        {
-            this.xx[i] = Math.floor(Math.random() * 1600) - 800;
+        for (var i = 0; i < this.max; i++) {
+            this.xx[i] = Math.floor(Math.random() * (this.width * 2)) - this.width;
             this.yy[i] = Math.floor(Math.random() * 1200) - 600;
-            this.zz[i] = Math.floor(Math.random() * 1600) - 800;
+            this.zz[i] = Math.floor(Math.random() * (this.width * 2)) - this.width;
 
-            let star = this.game.make.sprite(0, 0, 'star');
+            let r = Math.random();
+            let starname = 'star';
+            if (r < 0.33) {
+                starname = 'star2';
+            } else if (r < 0.66) {
+                starname = 'star3';
+            }
+            let star = this.game.make.sprite(0, 0, starname);
             star.anchor.set(0.5);
 
             this.sprites.addChild(star);
@@ -100,39 +106,32 @@ class Starfield {
     }
 
     update() {
-        var ppDist = 800;
+        var ppDist = this.width;
 
         this.delx--;
 
-        if (this.delx === 0)
-        {
-            if (this.speedz > this.speedz2)
-            {
+        if (this.delx === 0) {
+            if (this.speedz > this.speedz2) {
                 this.speedz2++;
             }
 
-            if (this.speedz < this.speedz2)
-            {
+            if (this.speedz < this.speedz2) {
                 this.speedz2--;
             }
 
-            if (this.speedx > this.speedx2)
-            {
+            if (this.speedx > this.speedx2) {
                 this.speedx2++;
             }
 
-            if (this.speedx < this.speedx2)
-            {
+            if (this.speedx < this.speedx2) {
                 this.speedx2--;
             }
 
-            if (this.speedy > this.speedy2)
-            {
+            if (this.speedy > this.speedy2) {
                 this.speedy2++;
             }
 
-            if (this.speedy < this.speedy2)
-            {
+            if (this.speedy < this.speedy2) {
                 this.speedy2--;
             }
 
@@ -141,12 +140,11 @@ class Starfield {
 
         this.del--;
 
-        if (this.del === 0)
-        {
+        if (this.del === 0) {
+            console.log(this.del, this.tabb, this.speedx, this.speedy, this.speedz);
             this.tabb += 5;
 
-            if (this.tabb >= this.tab.length)
-            {
+            if (this.tabb >= this.tab.length) {
                 this.tabb = 0;
             }
 
@@ -157,50 +155,42 @@ class Starfield {
             this.del = this.tab[this.tabb + 4];
         }
 
-        for (var i = 0; i < this.max; i++)
-        {
+        for (var i = 0; i < this.max; i++) {
             var perspective = ppDist / (ppDist - this.zz[i]);
 
-            this.balls[i].x = 400 + this.xx[i] * perspective;
+            this.balls[i].x = (this.width / 2) + this.xx[i] * perspective;
             this.balls[i].y = 300 + this.yy[i] * perspective;
             this.balls[i].alpha = Math.min(perspective / 2, 1);
             this.balls[i].scale.set(perspective / 2);
 
             this.xx[i] += this.speedx2;
-
-            if (this.xx[i] < -800)
-            {
-                this.xx[i] = this.xx[i] + 1600;
-            }
-
-            if (this.xx[i] >= 800)
-            {
-                this.xx[i] = this.xx[i] - 1600;
-            }
-
             this.yy[i] += this.speedy2;
+            this.zz[i] -= this.speedz2;
 
-            if (this.yy[i] < -600)
-            {
+            if (this.xx[i] < -this.width) {
+                this.xx[i] = this.xx[i] + (this.width * 2);
+            }
+
+            if (this.xx[i] >= this.width) {
+                this.xx[i] = this.xx[i] - (this.width * 2);
+            }
+
+            if (this.yy[i] < -600) {
                 this.yy[i] = this.yy[i] + 1200;
             }
 
-            if (this.yy[i] >= 600)
-            {
+            if (this.yy[i] >= 600) {
                 this.yy[i] = this.yy[i] - 1200;
             }
 
-            this.zz[i] -= this.speedz2;
-
-            if (this.zz[i] < -800)
-            {
-                this.zz[i] += 1600;
+            if (this.zz[i] < -this.width) {
+                this.zz[i] += (this.width * 2);
             }
 
-            if (this.zz[i] > 800)
-            {
-                this.zz[i] -= 1600;
+            if (this.zz[i] > this.width) {
+                this.zz[i] -= (this.width * 2);
             }
+
 
         }
     }
