@@ -110,6 +110,9 @@ class Starfield2 {
     yy: number[] = [];
     zz: number[] = [];
 
+    useAlpha: boolean = true;
+    useScale: boolean = true;
+
     constructor() {
         this.width = window.innerWidth;
 
@@ -140,6 +143,10 @@ class Starfield2 {
         if (this.game.renderType == Phaser.WEBGL) {
             this.max = 3000;
         }
+
+        this.game.input.keyboard.addKey(Phaser.Keyboard.ONE).onDown.add(() => {this.useAlpha=!this.useAlpha});
+        this.game.input.keyboard.addKey(Phaser.Keyboard.TWO).onDown.add(() => {this.useScale=!this.useScale});
+
 
         for (var i = 0; i < this.max; i++) {
             this.xx[i] = Math.floor(Math.random() * (this.width * 2)) - this.width;
@@ -175,8 +182,12 @@ class Starfield2 {
 
             this.balls[i].x = (this.width / 2) + this.xx[i] * perspective;
             this.balls[i].y = 300 + this.yy[i] * perspective;
-            this.balls[i].alpha = Math.min(perspective / 2, 1);
-            this.balls[i].scale.set(perspective / 2);
+            if (this.useAlpha) {
+                this.balls[i].alpha = Math.min(perspective / 2, 1);
+            }
+            if (this.useScale) {
+                this.balls[i].scale.set(perspective / 2);
+            }
 
             this.xx[i] += this.path.dx;
             this.yy[i] += this.path.dy;
