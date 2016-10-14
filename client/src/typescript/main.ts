@@ -17,7 +17,99 @@ class PathComponent {
     }
 }
 
-class Starfield {
+class Path {
+    paths: Array<PathComponent>;
+    currentPath: PathComponent;
+    currentPathIndex: number = 0;
+    clock: number = 0;
+
+    private _dx: number = 0;
+    private _dy: number = 0;
+    private _dz: number = 0;
+
+    accel: number = 6;
+
+    constructor(paths: Array<PathComponent>) {
+        this.paths = paths;
+        this.currentPath = paths[0];
+    }
+
+    get dx(): number {
+        return this._dx;
+    }
+    get dy(): number {
+        return this._dy;
+    }
+    get dz(): number {
+        return this._dz;
+    }
+
+    update(time: number) {
+        this.clock += time;
+        if (this.clock > this.currentPath.del) {
+            this.advance();
+        }
+
+        if (this._dx < this.currentPath.dx) {
+            this._dx += this.accel * time;
+        } else if (this._dx > this.currentPath.dx) {
+            this._dx -= this.accel * time;
+        }
+
+        if (this._dy < this.currentPath.dy) {
+            this._dy += this.accel * time;
+        } else if (this._dy > this.currentPath.dy) {
+            this._dy -= this.accel * time;
+        }
+
+        if (this._dz < this.currentPath.dz) {
+            this._dz += this.accel * time;
+        } else if (this._dz > this.currentPath.dz) {
+            this._dz -= this.accel * time;
+        }
+    }
+
+    advance() {
+        this.currentPathIndex += 1;
+        if (this.currentPathIndex >= this.paths.length) {
+            this.currentPathIndex = 0;
+        }
+        console.log(this.currentPath);
+        this.currentPath = this.paths[this.currentPathIndex];
+        this.clock = 0;
+    }
+}
+
+class Starfield2 {
+
+    width: number;
+
+    game: Phaser.Game;
+    sprites: SpriteBatch;
+
+    max: number = 164;
+
+    tab: Array<number> = [
+        0, 0, -16, 25, 1.6,
+        2, 4, -16, 25, 1.6,
+        18, 4, -8, 25, 1.6,
+        4, 8, 8, 25, 1.6,
+        -16, 8, 8, 10, 2.6,
+        0, 0, -8, 25, 4.4,
+        0, 8, 0, 25, 3.8,
+        0, 8, 8, 25, 1.6,
+        0, 0, 8, 25, 1.6,
+        8, 0, 8, 25, 3.8,
+        0, 8, 8, 25, 3.8,
+        8, 0, 8, 25, 3.8,
+        0, 16, 8, 25, 3.2];
+    path: Path;
+    balls: Sprite[] = [];
+
+    xx: number[] = [];
+    yy: number[] = [];
+    zz: number[] = [];
+
     constructor() {
         this.width = window.innerWidth;
 
@@ -27,44 +119,14 @@ class Starfield {
             update: () => this.update()
         });
 
-        this.del = this.tab[this.tabb + 4];
-        this.delx = this.tab[this.tabb + 3];
-
+        let pathComponents: PathComponent[] = [];
         for (var i=0; i<this.tab.length/5; i++) {
-            this.path.push(new PathComponent(this.tab[i*5+0], this.tab[i*5+1], this.tab[i*5+2], this.tab[i*5+3] ,this.tab[i*5+4]));
+            pathComponents.push(new PathComponent(this.tab[i*5+0], this.tab[i*5+1], this.tab[i*5+2], this.tab[i*5+3] ,this.tab[i*5+4]));
         }
+        this.path = new Path(pathComponents);
+
         console.log(this.path);
     }
-
-    width: number;
-
-    game: Phaser.Game;
-    sprites: SpriteBatch;
-
-    max: number = 164;
-
-    //  Path data table
-    // (speedx, speedy, speedz, number of frames to accelerate, number of frames to live in path
-    // (speedx, speedy, speedz, delx, del
-    tab: Array<number> = [0, 0, -4, 25, 100, 2, 1, -4, 25, 100, 3, 1, -2, 25, 100, 4, 2, 2, 25, 100, -4, 2, 2, 10, 100, 0, 0, -2, 25, 250, 0, 2, 0, 25, 200, 0, 2, 2, 25, 100, 0, 0, 2, 25, 100, 2, 0, 2, 25, 200, 0, 2, 2, 25, 200, 2, 0, 2, 25, 200, 0, 4, 2, 25, 200];
-    path: Array<PathComponent> = [];
-    tabb: number = 0;
-    del: number;
-    delx: number;
-
-    speedx: number = 0;
-    speedy: number = 0;
-    speedz: number = 0;
-
-    speedx2: number = 0;
-    speedy2: number = 0;
-    speedz2: number = 0;
-
-    xx: number[] = [];
-    yy: number[] = [];
-    zz: number[] = [];
-
-    balls: Sprite[] = [];
 
     preload() {
         this.game.load.image('star', 'images/star.png');
@@ -76,7 +138,7 @@ class Starfield {
         this.sprites = this.game.add.spriteBatch(this.game.world);
 
         if (this.game.renderType == Phaser.WEBGL) {
-            this.max = 2000;
+            this.max = 3000;
         }
 
         for (var i = 0; i < this.max; i++) {
@@ -92,68 +154,21 @@ class Starfield {
                 starname = 'star3';
             }
             let star = this.game.make.sprite(0, 0, starname);
-            star.anchor.set(0.5);
+            star.anchor.set(2);
 
             this.sprites.addChild(star);
 
             this.balls.push(star);
         }
-
-        this.speedx = this.tab[this.tabb + 0];
-        this.speedy = this.tab[this.tabb + 1];
-        this.speedz = this.tab[this.tabb + 2];
-
     }
 
     update() {
+        this.path.update(this.game.time.physicsElapsed);
+        this.moveStars();
+    }
+
+    moveStars() {
         var ppDist = this.width;
-
-        this.delx--;
-
-        if (this.delx === 0) {
-            if (this.speedz > this.speedz2) {
-                this.speedz2++;
-            }
-
-            if (this.speedz < this.speedz2) {
-                this.speedz2--;
-            }
-
-            if (this.speedx > this.speedx2) {
-                this.speedx2++;
-            }
-
-            if (this.speedx < this.speedx2) {
-                this.speedx2--;
-            }
-
-            if (this.speedy > this.speedy2) {
-                this.speedy2++;
-            }
-
-            if (this.speedy < this.speedy2) {
-                this.speedy2--;
-            }
-
-            this.delx = this.tab[this.tabb + 3];
-        }
-
-        this.del--;
-
-        if (this.del === 0) {
-            console.log(this.del, this.tabb, this.speedx, this.speedy, this.speedz);
-            this.tabb += 5;
-
-            if (this.tabb >= this.tab.length) {
-                this.tabb = 0;
-            }
-
-            this.speedx = this.tab[this.tabb + 0];
-            this.speedy = this.tab[this.tabb + 1];
-            this.speedz = this.tab[this.tabb + 2];
-
-            this.del = this.tab[this.tabb + 4];
-        }
 
         for (var i = 0; i < this.max; i++) {
             var perspective = ppDist / (ppDist - this.zz[i]);
@@ -163,40 +178,43 @@ class Starfield {
             this.balls[i].alpha = Math.min(perspective / 2, 1);
             this.balls[i].scale.set(perspective / 2);
 
-            this.xx[i] += this.speedx2;
-            this.yy[i] += this.speedy2;
-            this.zz[i] -= this.speedz2;
+            this.xx[i] += this.path.dx;
+            this.yy[i] += this.path.dy;
+            this.zz[i] -= this.path.dz;
 
-            if (this.xx[i] < -this.width) {
-                this.xx[i] = this.xx[i] + (this.width * 2);
-            }
-
-            if (this.xx[i] >= this.width) {
-                this.xx[i] = this.xx[i] - (this.width * 2);
-            }
-
-            if (this.yy[i] < -600) {
-                this.yy[i] = this.yy[i] + 1200;
-            }
-
-            if (this.yy[i] >= 600) {
-                this.yy[i] = this.yy[i] - 1200;
-            }
-
-            if (this.zz[i] < -this.width) {
-                this.zz[i] += (this.width * 2);
-            }
-
-            if (this.zz[i] > this.width) {
-                this.zz[i] -= (this.width * 2);
-            }
-
-
+            this.resetOutOfBounds(i);
         }
     }
 
+    resetOutOfBounds(i: number) {
+        if (this.xx[i] < -this.width) {
+            this.xx[i] = this.xx[i] + (this.width * 2);
+        }
+
+        if (this.xx[i] >= this.width) {
+            this.xx[i] = this.xx[i] - (this.width * 2);
+        }
+
+        if (this.yy[i] < -600) {
+            this.yy[i] = this.yy[i] + 1200;
+        }
+
+        if (this.yy[i] >= 600) {
+            this.yy[i] = this.yy[i] - 1200;
+        }
+
+        if (this.zz[i] < -this.width) {
+            this.zz[i] += (this.width * 2);
+        }
+
+        if (this.zz[i] > this.width) {
+            this.zz[i] -= (this.width * 2);
+        }
+    }
 }
 
+
+
 window.onload = () => {
-    var game = new Starfield();
+    var game = new Starfield2();
 };
