@@ -80,75 +80,27 @@ class Path {
     }
 }
 
-class Starfield2 {
-
+class Starfield3 {
     width: number;
-
-    game: Phaser.Game;
-    sprites: SpriteBatch;
-
     max: number = 164;
-
-    tab: Array<number> = [
-        0, 0, -16, 25, 1.6,
-        2, 4, -16, 25, 1.6,
-        18, 4, -8, 25, 1.6,
-        4, 8, 8, 25, 1.6,
-        -16, 8, 8, 10, 2.6,
-        0, 0, -8, 25, 4.4,
-        0, 8, 0, 25, 3.8,
-        0, 8, 8, 25, 1.6,
-        0, 0, 8, 25, 1.6,
-        8, 0, 8, 25, 3.8,
-        0, 8, 8, 25, 3.8,
-        8, 0, 8, 25, 3.8,
-        0, 16, 8, 25, 3.2];
-    path: Path;
-    balls: Sprite[] = [];
-
-    xx: number[] = [];
-    yy: number[] = [];
-    zz: number[] = [];
 
     useAlpha: boolean = true;
     useScale: boolean = true;
     usePerspective: boolean = true;
 
-    constructor() {
-        this.width = window.innerWidth;
+    xx: number[] = [];
+    yy: number[] = [];
+    zz: number[] = [];
 
-        this.game = new Phaser.Game(this.width, 600, Phaser.AUTO, 'content', {
-            preload: () => this.preload(),
-            create: () => this.create(),
-            update: () => this.update()
-        });
+    balls: Sprite[] = [];
 
-        let pathComponents: PathComponent[] = [];
-        for (var i=0; i<this.tab.length/5; i++) {
-            pathComponents.push(new PathComponent(this.tab[i*5+0], this.tab[i*5+1], this.tab[i*5+2], this.tab[i*5+3] ,this.tab[i*5+4]));
-        }
-        this.path = new Path(pathComponents);
+    constructor(game: Phaser.Game, width: number) {
+        let sprites: SpriteBatch = game.add.spriteBatch(game.world);
+        this.width = width;
 
-        console.log(this.path);
-    }
-
-    preload() {
-        this.game.load.image('star', 'images/star.png');
-        this.game.load.image('star2', 'images/star2.png');
-        this.game.load.image('star3', 'images/star3.png');
-    }
-
-    create() {
-        this.sprites = this.game.add.spriteBatch(this.game.world);
-
-        if (this.game.renderType == Phaser.WEBGL) {
+        if (game.renderType == Phaser.WEBGL) {
             this.max = 3000;
         }
-
-        this.game.input.keyboard.addKey(Phaser.Keyboard.ONE).onDown.add(() => {this.useAlpha=!this.useAlpha});
-        this.game.input.keyboard.addKey(Phaser.Keyboard.TWO).onDown.add(() => {this.useScale=!this.useScale});
-        this.game.input.keyboard.addKey(Phaser.Keyboard.THREE).onDown.add(()=> {this.usePerspective=!this.usePerspective});
-
 
         for (var i = 0; i < this.max; i++) {
             this.xx[i] = Math.floor(Math.random() * (this.width * 2)) - this.width;
@@ -162,21 +114,28 @@ class Starfield2 {
             } else if (r < 0.66) {
                 starname = 'star3';
             }
-            let star = this.game.make.sprite(0, 0, starname);
+            let star = game.make.sprite(0, 0, starname);
             star.anchor.set(2);
 
-            this.sprites.addChild(star);
+            sprites.addChild(star);
 
             this.balls.push(star);
         }
     }
 
-    update() {
-        this.path.update(this.game.time.physicsElapsed);
-        this.moveStars();
+    toggleUseAlpha() {
+      this.useAlpha = !this.useAlpha;
     }
 
-    moveStars() {
+    toggleUseScale() {
+      this.useScale = !this.useScale;
+    }
+
+    toggleUsePerspective() {
+      this.usePerspective = !this.usePerspective;
+    }
+
+    moveStars(dx: number, dy: number, dz: number) {
         var ppDist = this.width;
 
         for (var i = 0; i < this.max; i++) {
@@ -196,9 +155,9 @@ class Starfield2 {
                 this.balls[i].scale.set(perspective / 2);
             }
 
-            this.xx[i] += this.path.dx;
-            this.yy[i] += this.path.dy;
-            this.zz[i] -= this.path.dz;
+            this.xx[i] += dx;
+            this.yy[i] += dy;
+            this.zz[i] -= dz;
 
             this.resetOutOfBounds(i);
         }
@@ -231,7 +190,75 @@ class Starfield2 {
     }
 }
 
+class Starfield2 {
 
+    width: number;
+
+    game: Phaser.Game;
+
+    starfield: Starfield3
+
+    tab: Array<number> = [
+        0, 0, -16, 25, 1.6,
+        2, 4, -16, 25, 1.6,
+        18, 4, -8, 25, 1.6,
+        4, 8, 8, 25, 1.6,
+        -16, 8, 8, 10, 2.6,
+        0, 0, -8, 25, 4.4,
+        0, 8, 0, 25, 3.8,
+        0, 8, 8, 25, 1.6,
+        0, 0, 8, 25, 1.6,
+        8, 0, 8, 25, 3.8,
+        0, 8, 8, 25, 3.8,
+        8, 0, 8, 25, 3.8,
+        0, 16, 8, 25, 3.2];
+    path: Path;
+
+    constructor() {
+        this.width = window.innerWidth;
+
+        this.game = new Phaser.Game(this.width, 600, Phaser.AUTO, 'content', {
+            preload: () => this.preload(),
+            create: () => this.create(),
+            update: () => this.update()
+        });
+
+        let pathComponents: PathComponent[] = [];
+        for (var i=0; i<this.tab.length/5; i++) {
+            pathComponents.push(new PathComponent(this.tab[i*5+0], this.tab[i*5+1], this.tab[i*5+2], this.tab[i*5+3] ,this.tab[i*5+4]));
+        }
+        this.path = new Path(pathComponents);
+
+        console.log(this.path);
+    }
+
+    preload() {
+        this.game.load.image('star', 'images/star.png');
+        this.game.load.image('star2', 'images/star2.png');
+        this.game.load.image('star3', 'images/star3.png');
+    }
+
+    create() {
+
+        this.starfield = new Starfield3(this.game, this.width);
+
+        this.game.input.keyboard.addKey(Phaser.Keyboard.ONE).onDown.add(() => {
+          this.starfield.toggleUseAlpha();
+        });
+        this.game.input.keyboard.addKey(Phaser.Keyboard.TWO).onDown.add(() => {
+          this.starfield.toggleUseScale;
+        });
+        this.game.input.keyboard.addKey(Phaser.Keyboard.THREE).onDown.add(()=> {
+          this.starfield.toggleUsePerspective;
+        });
+
+    }
+
+    update() {
+        this.path.update(this.game.time.physicsElapsed);
+        this.starfield.moveStars(this.path.dx, this.path.dy, this.path.dz);
+    }
+}
 
 window.onload = () => {
     var game = new Starfield2();
