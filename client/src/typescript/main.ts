@@ -112,6 +112,7 @@ class Starfield2 {
 
     useAlpha: boolean = true;
     useScale: boolean = true;
+    usePerspective: boolean = true;
 
     constructor() {
         this.width = window.innerWidth;
@@ -146,6 +147,7 @@ class Starfield2 {
 
         this.game.input.keyboard.addKey(Phaser.Keyboard.ONE).onDown.add(() => {this.useAlpha=!this.useAlpha});
         this.game.input.keyboard.addKey(Phaser.Keyboard.TWO).onDown.add(() => {this.useScale=!this.useScale});
+        this.game.input.keyboard.addKey(Phaser.Keyboard.THREE).onDown.add(()=> {this.usePerspective=!this.usePerspective});
 
 
         for (var i = 0; i < this.max; i++) {
@@ -179,9 +181,14 @@ class Starfield2 {
 
         for (var i = 0; i < this.max; i++) {
             var perspective = ppDist / (ppDist - this.zz[i]);
+            if (this.usePerspective) {
+                this.balls[i].x = (this.width / 2) + this.xx[i] * perspective;
+                this.balls[i].y = 300 + this.yy[i] * perspective;
+            } else {
+                this.balls[i].x = (this.width / 2) + this.xx[i] * 1.0;
+                this.balls[i].y = 300 + this.yy[i] * 1.0;
+            }
 
-            this.balls[i].x = (this.width / 2) + this.xx[i] * perspective;
-            this.balls[i].y = 300 + this.yy[i] * perspective;
             if (this.useAlpha) {
                 this.balls[i].alpha = Math.min(perspective / 2, 1);
             }
